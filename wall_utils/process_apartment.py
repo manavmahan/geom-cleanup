@@ -20,7 +20,6 @@ from .utility_functions import (RPoint, RLineString, RPolygon)
 
 def process_apartment(example: dict, min_area=2, scaling=0.001):
     perimeter = RPolygon(scaling * np.array(example["perimeter"])[:, :2]).buffer(0)
-    print(perimeter)
     if perimeter.area < min_area:
         raise ValueError("Perimeter polygon is too small.")
 
@@ -133,6 +132,8 @@ def get_centerline_spaces(wall_center_lines, spaces):
 
 def orient_dw(dw: RPolygon):
     d1 = RPoint(dw.exterior.coords[0]).distance(RPoint(dw.exterior.coords[1]))
+    if len(dw.exterior.coords) < 3:
+        return d1, RLineString([dw.exterior.coords[0], dw.exterior.coords[1]])
     d2 = RPoint(dw.exterior.coords[1]).distance(RPoint(dw.exterior.coords[2]))
     if d1 < d2:
         dw = RPolygon([dw.exterior.coords[1], dw.exterior.coords[2], dw.exterior.coords[3], dw.exterior.coords[4]])
@@ -140,11 +141,14 @@ def orient_dw(dw: RPolygon):
     return d1, RLineString([dw.exterior.coords[0], dw.exterior.coords[1]])
 
 def place_dw_on_centerline(wall_centerlines, dw):
-    l, dw_line = orient_dw(dw)
+    try:
+        l, dw_line = orient_dw(dw)
+    except IndexError:
+        return None
     filtered_centerlines = [x for x in wall_centerlines if abs(get_angle(x[0]) - get_angle(dw_line)) < 5]
     dist_centerlines = [(x, project_point_on_line(dw.exterior.coords[0], x[0]).distance(RPoint(dw.exterior.coords[0]))) for x in filtered_centerlines]
-    filtered_centerlines = filter(lambda c: 2 * c[0][1] > c[1], dist_centerlines)
-    sorted_centerlines = sorted(filtered_centerlines, key=lambda x: x[1])
+    # filtered_centerlines = filter(lambda c: 2 * c[0][1] > c[1], dist_centerlines)
+    sorted_centerlines = sorted(dist_centerlines, key=lambda x: x[1])
     if len(sorted_centerlines) == 0:
         return None
     line = sorted_centerlines[0][0][0]

@@ -4,7 +4,6 @@ import shapely
 
 def round_value(value, round_to):
     """Rounds a value to a given decimal precision."""
-    print(value, round_to)
     return round(value / round_to) * round_to
 
 
@@ -35,38 +34,6 @@ class RPolygon(shapely.Polygon):
         """Create a Polygon with rounded coordinates."""
         shell = round_coordinates(shell,)
         holes = [round_coordinates(h,) for h in holes] if holes else None
-        return super().__new__(cls, shell, holes)
-
-
-def round_coordinates(coords, precision=3):
-    """Rounds coordinates to a given decimal precision."""
-    return [(round(x, precision), round(y, precision)) for x, y in coords]
-
-
-class RPoint(shapely.Point):
-    def __new__(cls, x, y=None, z=None, precision=3):
-        """Create a Point with rounded coordinates."""
-        if y is not None:
-            x, y = round(x, precision), round(y, precision)
-        else:
-            x, y = round(x[0], precision), round(x[1], precision)
-        return super().__new__(cls, (x, y))
-
-
-class RLineString(shapely.LineString):
-    def __new__(cls, coords, precision=3):
-        """Create a LineString with rounded coordinates."""
-        coords = [x.coords if isinstance(x, RPoint) else x for x in coords ]
-        l = super().__new__(cls, round_coordinates(coords, precision))
-        coords = [(l.bounds[0], l.bounds[1]), (l.bounds[2], l.bounds[3])]
-        return super().__new__(cls, round_coordinates(coords, precision))
-
-
-class RPolygon(shapely.Polygon):
-    def __new__(cls, shell, holes=None, precision=3):
-        """Create a Polygon with rounded coordinates."""
-        shell = round_coordinates(shell, precision)
-        holes = [round_coordinates(h, precision) for h in holes] if holes else None
         return super().__new__(cls, shell, holes)
 
 
@@ -258,5 +225,10 @@ def extend_lines_for_polygonize(wall_lines):
                 point = line_intersection(*l1.coords, *l2.coords)
                 if point is None:
                     continue
-                wall_lines[i1] = [RLineString(list(l1.coords) + list(point.coords)).simplify(0.01), t1]
-                wall_lines[i2] = [RLineString(list(l2.coords) + list(point.coords)).simplify(0.01), t2]
+                l1 = RLineString(list(l1.coords) + list(point.coords)).simplify(0.01)
+                l2 = RLineString(list(l2.coords) + list(point.coords)).simplify(0.01)
+                
+                l1 = RLineString([(l1.bounds[0], l1.bounds[1]), (l1.bounds[2], l1.bounds[3])])
+                l2 = RLineString([(l2.bounds[0], l2.bounds[1]), (l2.bounds[2], l2.bounds[3])])
+                wall_lines[i1] = [l1, t1]
+                wall_lines[i2] = [l2, t2]
