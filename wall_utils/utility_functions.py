@@ -7,13 +7,13 @@ def round_value(value, round_to):
     return round(value / round_to) * round_to
 
 
-def round_coordinates(coords, round_to=0.4):
+def round_coordinates(coords, round_to=0.1):
     """Rounds coordinates to a given decimal precision."""
     return [(round_value(x, round_to), round_value(y, round_to)) for x, y in coords]
 
 
 class RPoint(shapely.Point):
-    def __new__(cls, x, y=None, round_to=0.4):
+    def __new__(cls, x, y=None, round_to=0.1):
         """Create a Point with rounded coordinates."""
         if y is not None:
             x, y = round_value(x, round_to), round_value(y, round_to)
