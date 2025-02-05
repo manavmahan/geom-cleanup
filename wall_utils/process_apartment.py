@@ -20,6 +20,7 @@ from .utility_functions import (RPoint, RLineString, RPolygon)
 
 def process_apartment(example: dict, min_area=2, scaling=0.001):
     perimeter = RPolygon(scaling * np.array(example["perimeter"])[:, :2]).buffer(0)
+    print(perimeter)
     if perimeter.area < min_area:
         raise ValueError("Perimeter polygon is too small.")
 

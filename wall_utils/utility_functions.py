@@ -2,6 +2,42 @@ import math
 import shapely
 
 
+def round_value(value, round_to):
+    """Rounds a value to a given decimal precision."""
+    print(value, round_to)
+    return round(value / round_to) * round_to
+
+
+def round_coordinates(coords, round_to=0.4):
+    """Rounds coordinates to a given decimal precision."""
+    return [(round_value(x, round_to), round_value(y, round_to)) for x, y in coords]
+
+
+class RPoint(shapely.Point):
+    def __new__(cls, x, y=None, round_to=0.4):
+        """Create a Point with rounded coordinates."""
+        if y is not None:
+            x, y = round_value(x, round_to), round_value(y, round_to)
+        else:
+            x, y = round_value(x[0], round_to), round_value(x[1], round_to)
+        return super().__new__(cls, (x, y))
+
+
+class RLineString(shapely.LineString):
+    def __new__(cls, coords):
+        """Create a LineString with rounded coordinates."""
+        coords = [x.coords if isinstance(x, RPoint) else x for x in coords ]
+        return super().__new__(cls, round_coordinates(coords,))
+
+
+class RPolygon(shapely.Polygon):
+    def __new__(cls, shell, holes=None):
+        """Create a Polygon with rounded coordinates."""
+        shell = round_coordinates(shell,)
+        holes = [round_coordinates(h,) for h in holes] if holes else None
+        return super().__new__(cls, shell, holes)
+
+
 def round_coordinates(coords, precision=3):
     """Rounds coordinates to a given decimal precision."""
     return [(round(x, precision), round(y, precision)) for x, y in coords]
